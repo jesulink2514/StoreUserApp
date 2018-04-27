@@ -13,5 +13,13 @@ namespace StoreUserApp
 		{
 			InitializeComponent();
 		}
+
+	    protected override void OnAppearing()
+	    {
+	        base.OnAppearing();
+
+	        var vm = this.BindingContext as MainPageViewModel;
+	        vm?.OnNavigatedTo();
+	    }
 	}
 }
