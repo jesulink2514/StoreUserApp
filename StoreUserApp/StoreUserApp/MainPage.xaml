@@ -2,10 +2,28 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:StoreUserApp"
-             x:Class="StoreUserApp.MainPage">
+             x:Class="StoreUserApp.MainPage"
+             Title="StoreUser App">
+    <Page.BindingContext>
+        <local:MainPageViewModel />
+    </Page.BindingContext>
+    <StackLayout Padding="20">
 
-	<Label Text="Welcome to Xamarin.Forms!" 
-           VerticalOptions="Center" 
-           HorizontalOptions="Center" />
+        <StackLayout IsVisible="{Binding NotLoggedIn}" Spacing="10">
+            <Entry Text="{Binding UserName}" Placeholder="Ingrese su nombre de usuario" 
+                   HorizontalOptions="FillAndExpand"></Entry>
 
+            <Button Text="Iniciar Sesion" Command="{Binding LoginCommand}"
+                    BackgroundColor="MediumPurple" TextColor="White"/>
+        </StackLayout>
+
+        <StackLayout IsVisible="{Binding LoggedIn}" Spacing="10">
+            <Label Text="{Binding UserName,StringFormat='Bienvenido {0}!'}"
+                   HorizontalOptions="Center" FontSize="24"></Label>
+
+            <Button Text="Cerrar Sesion" Command="{Binding LogoutCommand}"
+                    BackgroundColor="Red" TextColor="White"/>
+        </StackLayout>
+
+    </StackLayout>
 </ContentPage>

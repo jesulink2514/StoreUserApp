@@ -13,7 +13,7 @@ namespace StoreUserApp
 		{
 			InitializeComponent();
 
-			MainPage = new StoreUserApp.MainPage();
+			MainPage = new NavigationPage(new StoreUserApp.MainPage());
 		}
 
 		protected override void OnStart ()
