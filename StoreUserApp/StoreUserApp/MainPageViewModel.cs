@@ -85,5 +85,6 @@ namespace StoreUserApp
                 await writer.WriteAsync(text);
             }
         }
+
     }
 }
