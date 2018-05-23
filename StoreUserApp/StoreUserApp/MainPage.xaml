@@ -13,6 +13,9 @@
             <Entry Text="{Binding UserName}" Placeholder="Ingrese su nombre de usuario" 
                    HorizontalOptions="FillAndExpand"></Entry>
 
+            <Entry Text="{Binding Password}" Placeholder="Ingrese su contraseña" 
+                   HorizontalOptions="FillAndExpand"></Entry>
+
             <Button Text="Iniciar Sesion" Command="{Binding LoginCommand}"
                     BackgroundColor="MediumPurple" TextColor="White"/>
         </StackLayout>
@@ -21,9 +24,14 @@
             <Label Text="{Binding UserName,StringFormat='Bienvenido {0}!'}"
                    HorizontalOptions="Center" FontSize="24"></Label>
 
+            <Label Text="{Binding Password}" FontSize="Medium" FontAttributes="Bold"/>
+
             <Button Text="Cerrar Sesion" Command="{Binding LogoutCommand}"
                     BackgroundColor="Red" TextColor="White"/>
         </StackLayout>
+
+        
+        <Label Text="{Binding Encrypted}" FontSize="Medium" FontAttributes="Bold"/>
 
     </StackLayout>
 </ContentPage>

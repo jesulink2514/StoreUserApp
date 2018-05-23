@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using PCLCrypto;
+using System;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
@@ -9,6 +12,8 @@ namespace StoreUserApp
     {
         private string _userName;
         private bool _loggedIn;
+        private string _password;
+        private string _encrypted;
 
         public string UserName
         {
@@ -19,6 +24,9 @@ namespace StoreUserApp
                 OnPropertyChanged();
             }
         }
+
+        public string Password { get => _password; set { _password = value; OnPropertyChanged();} }
+        public string Encrypted { get => _encrypted; set { _encrypted = value; OnPropertyChanged();} }
 
         public bool LoggedIn
         {
@@ -34,7 +42,7 @@ namespace StoreUserApp
         public bool NotLoggedIn => !LoggedIn;
 
         public ICommand LoginCommand { get; }
-        public ICommand LogoutCommand { get;}
+        public ICommand LogoutCommand { get; }
 
         private readonly IFileHelper _fileHelper;
 
@@ -55,15 +63,20 @@ namespace StoreUserApp
         private async void Login(object obj)
         {
             await Write(UserName);
+            AddSensitiveValue("password", Password);
+            Encrypted = App.Current.Properties["password"].ToString();
+            Password = string.Empty;
             LoggedIn = true;
         }
 
         public async void OnNavigatedTo()
         {
             var user = await Read();
-            if(string.IsNullOrWhiteSpace(user))return;
+            if (string.IsNullOrWhiteSpace(user)) return;
 
             UserName = user;
+            Password = ReadSensitiveValue("password");
+            Encrypted = App.Current.Properties["password"].ToString();
             LoggedIn = true;
         }
 
@@ -86,5 +99,70 @@ namespace StoreUserApp
             }
         }
 
+        private ICryptographicKey GetPrivateKey(ISymmetricKeyAlgorithmProvider provider)
+        {
+            var pkmValues = App.Current.Properties.ContainsKey("PrivateKeyMaterial") ?
+                App.Current.Properties["PrivateKeyMaterial"].ToString() : null;
+
+            var pkm = pkmValues == null ?
+                WinRTCrypto.CryptographicBuffer.GenerateRandom(32) : 
+                Convert.FromBase64String(pkmValues);
+
+            if (pkmValues == null)
+            {
+                var value = Convert.ToBase64String(pkm);
+                App.Current.Properties["PrivateKeyMaterial"] = value;
+            }
+
+            var cryptkey = provider.CreateSymmetricKey(pkm);
+
+            return cryptkey;
+        }
+
+        public void AddSensitiveValue(string key, string data)
+        {
+            var binarydata = GetBinaryData(data);
+
+            var provider = WinRTCrypto.SymmetricKeyAlgorithmProvider.OpenAlgorithm(SymmetricAlgorithm.AesCbcPkcs7);
+
+            var cryptkey = GetPrivateKey(provider);
+
+            var cipherText = WinRTCrypto.CryptographicEngine.Encrypt(cryptkey, binarydata);
+
+            var serializedText = Convert.ToBase64String(cipherText);
+
+            App.Current.Properties[key] = serializedText;
+        }
+
+        public string ReadSensitiveValue(string key)
+        {
+            if (!App.Current.Properties.ContainsKey(key)) return null;
+
+            var raw = App.Current.Properties[key].ToString();
+
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+
+            var provider = WinRTCrypto.SymmetricKeyAlgorithmProvider.OpenAlgorithm(SymmetricAlgorithm.AesCbcPkcs7);
+            var privateKey = GetPrivateKey(provider);
+
+            var binaryData = Convert.FromBase64String(raw);
+
+            var decrypted = WinRTCrypto.CryptographicEngine.Decrypt(privateKey, binaryData);
+
+            var decryptedString = GetPlainData(decrypted);
+
+            return decryptedString;
+        }
+
+        private static byte[] GetBinaryData(string data)
+        {
+            return Encoding.UTF8.GetBytes(data);
+        }
+
+        private static string GetPlainData(byte[] binarydata)
+        {
+            return binarydata == null ? null :
+                Encoding.UTF8.GetString(binarydata, 0, binarydata.Length);
+        }
     }
 }
